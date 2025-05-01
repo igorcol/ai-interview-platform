@@ -7,24 +7,47 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
+import CustomFormField from "./CustomFormField";
+import { useRouter } from "next/navigation";
 
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-});
+const authFormSchema = (type: FormType) => {
+  return z.object({
+    name: type === "sign-up" ? z.string().min(3) : z.string().optional(),
+    email: z.string().email(),
+    password: z.string().min(3),
+  });
+};
 
 const AuthForm = ({ type }: { type: FormType }) => {
+  const router = useRouter();
   const isSignIn = type === "sign-in";
+
+  const formSchema = authFormSchema(type);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      name: "",
+      email: "",
+      password: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("AUTH FORM SUBMIT");
-    console.log(values);
+
+    try {
+      if (type === "sign-up") {
+        toast.success('Account created successfully. Please sign in')
+        router.push('/sign-in')
+      } else {
+        router.push('/')
+      }
+    } catch (error) {
+      console.log("[AuthForm] onSubmit Error: ", error);
+      toast.error(`There was an error: ${error}`);
+    }
   }
 
   return (
@@ -41,9 +64,33 @@ const AuthForm = ({ type }: { type: FormType }) => {
             onSubmit={form.handleSubmit(onSubmit)}
             className="w-full space-y-6 mt-4 form"
           >
-            {!isSignIn && <p>Name</p>}
-            <p>Email</p>
-            <p>Password</p>
+            {/* Name */}
+            {!isSignIn && (
+              <CustomFormField
+              control={form.control}
+              name="name"
+                label="Name"
+                placeholder="Your name"
+              />
+            )}
+
+            {/* Email */}
+            <CustomFormField
+              control={form.control}
+              name="email"
+              label="Email"
+              placeholder="Your Email"
+              type="email"
+            />
+
+            {/* Password */}
+            <CustomFormField
+              control={form.control}
+              name="password"
+              label="Password"
+              placeholder="Enter Your Password"
+              type="password"
+            />
 
             <Button type="submit" className="btn">
               {isSignIn ? "Sign In" : " Create an Account"}
