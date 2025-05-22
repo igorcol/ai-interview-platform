@@ -29,7 +29,7 @@ export async function signUp(params: SignUpParams) {
     } catch (error: any) {
         console.log('[AuthActions] SignUp error:', error);
 
-        if (error.code === 'auth/email-already-exists') {
+        if (error.code === 'auth/email-already-in-use') {
             return {
                 success: false,
                 message: 'This email is already in use.'
