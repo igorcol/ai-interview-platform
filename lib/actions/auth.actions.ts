@@ -12,7 +12,7 @@ export async function signUp(params: SignUpParams) {
     try {
         const userRecord = await db.collection('users').doc(uid).get(); // check if already exist
 
-        if (userRecord) {
+        if (userRecord.exists) {
             return {
                 success: false,
                 message: 'User already exists. Please sign in instead'
