@@ -43,22 +43,6 @@ export async function signUp(params: SignUpParams) {
     }
 }
 
-export async function setSessionCookie(idToken: string) {
-    const cookieStore = await cookies();
-
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-        expiresIn: ONE_WEEK
-    })
-
-    cookieStore.set('session', sessionCookie, {
-        maxAge: ONE_WEEK,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        sameSite: 'lax'
-    })
-}
-
 export async function signIn(params: SignInParams) {
     const { email, idToken} = params
 
@@ -82,4 +66,54 @@ export async function signIn(params: SignInParams) {
             message: 'Failed to log into an account.'
         }
     }
+}
+
+export async function setSessionCookie(idToken: string) {
+    const cookieStore = await cookies();
+
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+        expiresIn: ONE_WEEK
+    })
+
+    cookieStore.set('session', sessionCookie, {
+        maxAge: ONE_WEEK,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        sameSite: 'lax'
+    })
+}
+
+export async function getCurrentUser(): Promise<User| null> {
+    const cookieStore = await cookies();
+
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) return null;
+
+    try {
+
+        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+
+        const userRecord = await db.collection('users')
+            .doc(decodedClaims.uid)
+            .get();
+        console.log(">> DEBUG | UserRecord:", userRecord.data())
+
+        if(!userRecord.exists) return null; 
+
+        return {
+            ...userRecord.data(),
+            id: userRecord.id
+        } as User
+
+    } catch (err) {
+        console.log(err)
+        return null
+    }
+}
+
+export async function isAuthenticated() {
+    const user = await getCurrentUser();
+    return !!user;
 }
